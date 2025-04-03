@@ -36,3 +36,43 @@
 .modal-footer {
   display: block;
 }
+
+.color-picker-container {
+  margin-bottom: 10px;
+}
+
+.color-input-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.color-input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 120px; 
+  margin-right: 8px;
+}
+
+.color-preview {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.add-item-color-picker-container {
+  display: flex;
+  align-items: center;
+}
+
+.add-item-color-input {
+  width: 80px;
+  height: 30px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.ml-2 {
+  margin-left: 8px;
+}

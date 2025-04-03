@@ -32,9 +32,13 @@ export class TodoComponent implements OnInit {
     id: [null],
     listId: [null],
     priority: [''],
-    note: ['']
+    note: [''],
+    color:['']
   });
 
+  //#region new color 
+  newItemColor: string = '#FFFFFF';
+  //#endregion
 
   constructor(
     private listsClient: TodoListsClient,
@@ -137,6 +141,7 @@ export class TodoComponent implements OnInit {
 
   // Items
   showItemDetailsModal(template: TemplateRef<any>, item: TodoItemDto): void {
+ 
     this.selectedItem = item;
     this.itemDetailsFormGroup.patchValue(this.selectedItem);
 
@@ -148,6 +153,7 @@ export class TodoComponent implements OnInit {
 
   updateItemDetails(): void {
     const item = new UpdateTodoItemDetailCommand(this.itemDetailsFormGroup.value);
+    item.color=this.newItemColor;
     this.itemsClient.updateItemDetails(this.selectedItem.id, item).subscribe(
       () => {
         if (this.selectedItem.listId !== item.listId) {
@@ -169,16 +175,17 @@ export class TodoComponent implements OnInit {
       error => console.error(error)
     );
   }
-
+  // depend next feauture
   addItem() {
     const item = {
       id: 0,
       listId: this.selectedList.id,
       priority: this.priorityLevels[0].value,
       title: '',
-      done: false
+      done: false,
+      color:this.newItemColor ,
     } as TodoItemDto;
-
+   
     this.selectedList.items.push(item);
     const index = this.selectedList.items.length - 1;
     this.editItem(item, 'itemTitle' + index);
@@ -196,7 +203,6 @@ export class TodoComponent implements OnInit {
       this.deleteItem(item);
       return;
     }
-
     if (item.id === 0) {
       this.itemsClient
         .create({
@@ -260,5 +266,10 @@ export class TodoComponent implements OnInit {
     clearInterval(this.deleteCountDownInterval);
     this.deleteCountDown = 0;
     this.deleting = false;
+  }
+  //event changing color 
+  onColorChange(newColor: string): void {
+    this.selectedItem.color = newColor;
+    this.newItemColor= newColor;
   }
 }

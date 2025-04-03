@@ -10,8 +10,7 @@
     <div class="col-sm-4">
       <div class="clearfix">
         <h2 class="float-start">Lists</h2>
-        <button class="btn btn-default float-end" title="New List..."
-          (click)="showNewListModal(newListModalTemplate)">
+        <button class="btn btn-default float-end" title="New List..."(click)="showNewListModal(newListModalTemplate)">
           <i class="bi bi-journal-plus"></i>
         </button>
       </div>
@@ -38,12 +37,12 @@
         </button>
       </div>
       <ul id="todo-items" class="list-group mb-2">
-        <li class="list-group-item" *ngFor="let item of selectedList.items; index as i">
+        <li class="list-group-item" *ngFor="let item of selectedList.items; index as i" [style.background]="item.color ? item.color : 'transparent'">
           <div class="d-flex">
             <div class="todo-item-checkbox">
               <input type="checkbox" [(ngModel)]="item.done" (change)="updateItem(item)" />
             </div>
-            <div class="flex-fill">
+            <div class="flex-fill d-flex align-items-center">
               <input id="{{ 'itemTitle' + i }}" *ngIf="item == selectedItem" type="text"
                 class="form-control item-input-control" [(ngModel)]="item.title" (keyup.enter)="updateItem(item, true)"
                 (blur)="updateItem(item)" autofocus="autofocus" />
@@ -123,9 +122,13 @@
           <option [ngValue]="level.value" *ngFor="let level of priorityLevels">{{ level.name }}</option>
         </select>
       </div>
-      <div class="form-group">
-        <label for="note">Note</label>
-        <textarea id="note" class="form-control" rows="3" formControlName="note"></textarea>
+      <div class="form-group color-picker-container">
+        <label for="color">Selected Color</label>
+        <div class="color-input-wrapper">
+          <input [(colorPicker)]="selectedItem.color" [value]="selectedItem.color"
+            (colorPickerChange)="onColorChange($event)" class="color-input" />
+          <div class="color-preview" [style.background]="selectedItem.color"></div>
+        </div>
       </div>
     </form>
     <div *ngIf="debug">
@@ -135,7 +138,8 @@
   <div class="modal-footer">
     <div class="clearfix">
       <div class="float-start">
-        <button class="btn btn-default text-danger" (click)="deleteItem(selectedItem, true)">{{deleting ? 'Deleting ' + deleteCountDown + ' ...' : 'Delete'}}</button>
+        <button class="btn btn-default text-danger" (click)="deleteItem(selectedItem, true)">{{deleting ? 'Deleting ' +
+          deleteCountDown + ' ...' : 'Delete'}}</button>
       </div>
       <div class="float-end">
         <button class="btn btn-default" (click)="itemDetailsModalRef.hide()">Cancel</button>

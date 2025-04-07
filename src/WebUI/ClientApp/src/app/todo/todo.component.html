@@ -10,8 +10,7 @@
     <div class="col-sm-4">
       <div class="clearfix">
         <h2 class="float-start">Lists</h2>
-        <button class="btn btn-default float-end" title="New List..."
-          (click)="showNewListModal(newListModalTemplate)">
+        <button class="btn btn-default float-end" title="New List..." (click)="showNewListModal(newListModalTemplate)">
           <i class="bi bi-journal-plus"></i>
         </button>
       </div>
@@ -38,6 +37,11 @@
         </button>
       </div>
       <ul id="todo-items" class="list-group mb-2">
+        <li class="list-group-item d-flex justify-content-end align-items-center">
+          <input type="text" class="form-control me-2" placeholder="Search..." [(ngModel)]="searchTerm" (keyup)="filterItems()" style="max-width: 100%;">
+        <!-- in my mind this will be friendly  -->
+          <!-- <button class="btn btn-primary" (click)="addItem()">+</button> -->
+        </li>
         <li class="list-group-item" *ngFor="let item of selectedList.items; index as i">
           <div class="d-flex">
             <div class="todo-item-checkbox">
@@ -53,10 +57,15 @@
               </div>
             </div>
             <div class="todo-item-commands">
-              <button *ngIf="item.id != 0" (click)="showItemDetailsModal(itemDetailsModalTemplate, item)"
+              <!-- User freindly :)  -->
+              <div class="icons" *ngIf="item.id != 0">
+                <i class="fa fa-edit text-success me-2" ngbTooltip="edit" (click)="showItemDetailsModal(itemDetailsModalTemplate, item)"></i>
+                <i  class="fa fa-trash text-danger p-1" ngbTooltip="delete" (click)="deleteTodoItem(item)"></i>
+              </div>
+              <!-- <button *ngIf="item.id != 0" (click)="showItemDetailsModal(itemDetailsModalTemplate, item)"
                 class="btn btn-default btn-xs" role="button">
                 <i class="bi bi-three-dots-vertical"></i>
-              </button>
+              </button> -->
             </div>
           </div>
         </li>
@@ -135,7 +144,8 @@
   <div class="modal-footer">
     <div class="clearfix">
       <div class="float-start">
-        <button class="btn btn-default text-danger" (click)="deleteItem(selectedItem, true)">{{deleting ? 'Deleting ' + deleteCountDown + ' ...' : 'Delete'}}</button>
+        <button class="btn btn-default text-danger" (click)="deleteItem(selectedItem, true)">{{deleting ? 'Deleting ' +
+          deleteCountDown + ' ...' : 'Delete'}}</button>
       </div>
       <div class="float-end">
         <button class="btn btn-default" (click)="itemDetailsModalRef.hide()">Cancel</button>
@@ -193,3 +203,5 @@
     </div>
   </div>
 </ng-template>
+
+<app-loading [loading]="loading"></app-loading>

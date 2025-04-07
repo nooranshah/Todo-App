@@ -36,3 +36,11 @@
 .modal-footer {
   display: block;
 }
+.icons {
+  float: right;      
+}
+
+.fa-trash,.fa-edit,.fa-clone:hover {
+  opacity: 0.8;
+  cursor: pointer;
+}

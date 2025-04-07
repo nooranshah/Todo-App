@@ -28,6 +28,7 @@ export class TodoComponent implements OnInit {
   listOptionsModalRef: BsModalRef;
   deleteListModalRef: BsModalRef;
   itemDetailsModalRef: BsModalRef;
+  public loading:boolean=false;
   itemDetailsFormGroup = this.fb.group({
     id: [null],
     listId: [null],
@@ -36,6 +37,7 @@ export class TodoComponent implements OnInit {
     color:['']
   });
 
+  public searchTerm:string;
   //#region new color 
   newItemColor: string = '#FFFFFF';
   //#endregion
@@ -110,6 +112,8 @@ export class TodoComponent implements OnInit {
 
     this.listOptionsModalRef = this.modalService.show(template);
   }
+
+  filterItems(){}
 
   updateListOptions() {
     const list = this.listOptionsEditor as UpdateTodoListCommand;
@@ -196,6 +200,7 @@ export class TodoComponent implements OnInit {
     setTimeout(() => document.getElementById(inputId).focus(), 100);
   }
 
+
   updateItem(item: TodoItemDto, pressedEnter: boolean = false): void {
     const isNewItem = item.id === 0;
 
@@ -260,6 +265,22 @@ export class TodoComponent implements OnInit {
         error => console.error(error)
       );
     }
+  }
+
+  deleteTodoItem(item: TodoItemDto){
+    debugger;
+    this.loading=true;
+    this.itemsClient.delete(item.id).subscribe(
+      () =>{
+        (this.selectedList.items = this.selectedList.items.filter(t => t.id !== item.id))
+        this.loading=false;
+      },
+      error => {
+        console.error(error)
+        this.loading=false;
+      }
+    );
+
   }
 
   stopDeleteCountDown() {

@@ -18,6 +18,8 @@ import { ApiAuthorizationModule } from 'src/api-authorization/api-authorization.
 import { AuthorizeInterceptor } from 'src/api-authorization/authorize.interceptor';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ColorPickerModule } from 'ngx-color-picker';
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { SharedModule } from './shared/shared.module';
 
 
 @NgModule({
@@ -35,6 +37,8 @@ import { ColorPickerModule } from 'ngx-color-picker';
     HttpClientModule,
     FormsModule,
     ColorPickerModule,
+    NgbModule,
+    SharedModule,
     ReactiveFormsModule,
     ApiAuthorizationModule,
     AppRoutingModule,

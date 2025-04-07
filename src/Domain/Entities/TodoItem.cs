@@ -1,11 +1,13 @@
-﻿namespace Todo_App.Domain.Entities;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Todo_App.Domain.Entities;
 
 public class TodoItem : BaseAuditableEntity
 {
     public int ListId { get; set; }
 
     public string? Title { get; set; }
-
+    [MaxLength(500)]
     public string? Note { get; set; }
 
     public PriorityLevel Priority { get; set; }

@@ -5,7 +5,8 @@ import {
   TodoListsClient, TodoItemsClient,
   TodoListDto, TodoItemDto, PriorityLevelDto,
   CreateTodoListCommand, UpdateTodoListCommand,
-  CreateTodoItemCommand, UpdateTodoItemDetailCommand
+  CreateTodoItemCommand, UpdateTodoItemDetailCommand,
+  TagDto
 } from '../web-api-client';
 
 @Component({
@@ -18,9 +19,9 @@ export class TodoComponent implements OnInit {
   deleting = false;
   deleteCountDown = 0;
   deleteCountDownInterval: any;
-  lists: TodoListDto[];
+  lists: TodoListDto[] = [];
   priorityLevels: PriorityLevelDto[];
-  selectedList: TodoListDto;
+
   selectedItem: TodoItemDto;
   newListEditor: any = {};
   listOptionsEditor: any = {};
@@ -34,12 +35,18 @@ export class TodoComponent implements OnInit {
     listId: [null],
     priority: [''],
     note: [''],
-    color:['']
+    color:[''],
+    tags: [[]]
   });
 
   public searchTerm:string;
   //#region new color 
   newItemColor: string = '#FFFFFF';
+  //#endregion
+
+  //#region filter by tag and title 
+  selectedList: any = { id: 0, title: '', items: [] };
+  filteredItems: TodoItemDto[] = [];
   //#endregion
 
   constructor(
@@ -50,22 +57,48 @@ export class TodoComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.listsClient.get().subscribe(
-      result => {
-        this.lists = result.lists;
-        this.priorityLevels = result.priorityLevels;
-        if (this.lists.length) {
-          this.selectedList = this.lists[0];
-        }
-      },
-      error => console.error(error)
-    );
+    this.loadLists();
   }
 
-  // Lists
-  remainingItems(list: TodoListDto): number {
-    return list.items.filter(t => !t.done).length;
+  loadLists(): void {
+    this.loading = true;
+    this.listsClient.get().subscribe({
+      next: result => {
+        console.log('Lists response:', result);
+        this.lists = result.lists ?? [];
+        this.priorityLevels = result.priorityLevels ?? [];
+        if (this.debug) {
+          console.log('Loaded lists:', this.lists);
+          console.log('Loaded priorityLevels:', this.priorityLevels);
+        }
+
+        if (this.lists.length) {
+          this.selectList(this.lists[0]);
+        } else {
+          console.warn('No lists found, using fallback data');
+       
+          this.lists = [{
+            id: 1,
+            title: 'Fallback List',
+            items: [] as TodoItemDto[] 
+          } as TodoListDto];
+          this.selectList(this.lists[0]);
+        }
+        this.loading = false;
+      },
+      error: err => {
+        console.error('Failed to load lists:', err);
+        this.loading = false;
+        this.lists = [{
+          id: 1,
+          title: 'Fallback List',
+          items: [] as TodoItemDto[]
+        } as TodoListDto];
+        this.selectList(this.lists[0]);
+      }
+    });
   }
+
 
   showNewListModal(template: TemplateRef<any>): void {
     this.newListModalRef = this.modalService.show(template);
@@ -113,8 +146,6 @@ export class TodoComponent implements OnInit {
     this.listOptionsModalRef = this.modalService.show(template);
   }
 
-  filterItems(){}
-
   updateListOptions() {
     const list = this.listOptionsEditor as UpdateTodoListCommand;
     this.listsClient.update(this.selectedList.id, list).subscribe(
@@ -147,7 +178,10 @@ export class TodoComponent implements OnInit {
   showItemDetailsModal(template: TemplateRef<any>, item: TodoItemDto): void {
  
     this.selectedItem = item;
-    this.itemDetailsFormGroup.patchValue(this.selectedItem);
+    this.itemDetailsFormGroup.patchValue({
+      ...this.selectedItem,
+      tags: this.selectedItem.tags || []  
+    });
 
     this.itemDetailsModalRef = this.modalService.show(template);
     this.itemDetailsModalRef.onHidden.subscribe(() => {
@@ -155,49 +189,115 @@ export class TodoComponent implements OnInit {
     });
   }
 
+  selectList(list: TodoListDto): void {
+    this.selectedList = list;
+    this.selectedItem = null;
+    this.searchTerm = '';
+    this.filteredItems = [...(this.selectedList.items ?? [])];
+    if (this.itemDetailsModalRef) {
+      this.itemDetailsModalRef.hide();
+    }
+    if (this.debug) {
+      console.log('Selected list:', this.selectedList);
+      console.log('Filtered items:', this.filteredItems);
+    }
+  }
+
+  remainingItems(list: TodoListDto): number {
+    return (list.items ?? []).filter(t => !t.done).length;
+  }
+
   updateItemDetails(): void {
-    const item = new UpdateTodoItemDetailCommand(this.itemDetailsFormGroup.value);
-    item.color=this.newItemColor;
-    this.itemsClient.updateItemDetails(this.selectedItem.id, item).subscribe(
-      () => {
-        if (this.selectedItem.listId !== item.listId) {
-          this.selectedList.items = this.selectedList.items.filter(
-            i => i.id !== this.selectedItem.id
-          );
-          const listIndex = this.lists.findIndex(
-            l => l.id === item.listId
-          );
-          this.selectedItem.listId = item.listId;
-          this.lists[listIndex].items.push(this.selectedItem);
+    if (!this.selectedItem || !this.selectedItem.id) {
+      console.error('Cannot update item: selectedItem is null or has no ID');
+      return;
+    }
+
+    this.loading = true; 
+    const formValue = this.itemDetailsFormGroup.value;
+    const updatedItem = new UpdateTodoItemDetailCommand({
+      id: this.selectedItem.id,
+      listId: formValue.listId || this.selectedList.id,
+      priority: formValue.priority || this.priorityLevels[0].value, 
+      note: formValue.note || '',
+      color: this.newItemColor,
+      tags: this.selectedItem.tags || [] 
+    });
+
+    this.itemsClient.updateItemDetails(this.selectedItem.id, updatedItem).subscribe({
+      next: () => {
+        
+        Object.assign(this.selectedItem!, {
+          listId: updatedItem.listId,
+          priority: updatedItem.priority,
+          note: updatedItem.note,
+          color: updatedItem.color,
+          tags: updatedItem.tags 
+        });
+
+        
+        if (this.selectedItem!.listId !== this.selectedList.id) {
+          this.selectedList.items = (this.selectedList.items ?? []).filter(i => i.id !== this.selectedItem!.id);
+          const targetList = this.lists.find(l => l.id === updatedItem.listId);
+          if (targetList) {
+            targetList.items = targetList.items || [];
+            targetList.items.push(this.selectedItem!);
+          }
         }
 
-        this.selectedItem.priority = item.priority;
-        this.selectedItem.note = item.note;
+       
+        this.filteredItems = this.filteredItems.map(i =>
+          i.id === this.selectedItem!.id ? this.selectedItem! : i
+        );
         this.itemDetailsModalRef.hide();
         this.itemDetailsFormGroup.reset();
+        this.loading = false;
+        this.filterItems(); 
       },
-      error => console.error(error)
-    );
+      error: err => {
+        console.error('Failed to update item details:', err);
+        this.loading = false;
+        
+      }
+    });
   }
-  // depend next feauture
-  addItem() {
-    const item = {
+  addItem(): void {
+  
+    if (!this.priorityLevels.length || !this.selectedList.id) {
+      console.error('Cannot add item: priorityLevels or selectedList not initialized');
+      return;
+    }
+
+    const item: TodoItemDto = {
       id: 0,
       listId: this.selectedList.id,
       priority: this.priorityLevels[0].value,
-      title: '',
+      title: '', 
       done: false,
-      color:this.newItemColor ,
-    } as TodoItemDto;
-   
+      color: this.newItemColor,
+      tags: []
+    }as TodoItemDto;
+
+    
+    this.selectedList.items = this.selectedList.items || [];
     this.selectedList.items.push(item);
+    this.filteredItems = [...this.selectedList.items]; 
     const index = this.selectedList.items.length - 1;
-    this.editItem(item, 'itemTitle' + index);
+
+    
+    setTimeout(() => this.editItem(item, 'itemTitle' + index), 0);
   }
 
   editItem(item: TodoItemDto, inputId: string): void {
     this.selectedItem = item;
-    setTimeout(() => document.getElementById(inputId).focus(), 100);
+    setTimeout(() => {
+      const input = document.getElementById(inputId) as HTMLInputElement;
+      if (input) {
+        input.focus();
+      } else {
+        console.warn(`Input with ID ${inputId} not found`);
+      }
+    }, 100); 
   }
 
 
@@ -258,22 +358,24 @@ export class TodoComponent implements OnInit {
       this.selectedList.items.splice(itemIndex, 1);
     } else {
       this.itemsClient.delete(item.id).subscribe(
-        () =>
-        (this.selectedList.items = this.selectedList.items.filter(
-          t => t.id !== item.id
-        )),
+        () =>{
+          (this.selectedList.items = this.selectedList.items.filter(
+            t => t.id !== item.id))
+          this.filterItems();
+        },
         error => console.error(error)
       );
     }
   }
 
+ 
   deleteTodoItem(item: TodoItemDto){
-    debugger;
     this.loading=true;
     this.itemsClient.delete(item.id).subscribe(
       () =>{
         (this.selectedList.items = this.selectedList.items.filter(t => t.id !== item.id))
         this.loading=false;
+        this.filterItems();
       },
       error => {
         console.error(error)
@@ -293,4 +395,47 @@ export class TodoComponent implements OnInit {
     this.selectedItem.color = newColor;
     this.newItemColor= newColor;
   }
+
+  addTag(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const tagName = input.value.trim();
+
+    if (tagName && this.selectedItem) {
+      const tagExists = this.selectedItem.tags?.some(tag => tag.name === tagName);
+      if (!tagExists) {
+        this.selectedItem.tags = this.selectedItem.tags || [];
+        const newTag = new TagDto({ name: tagName });
+        this.selectedItem.tags = [...this.selectedItem.tags, newTag];
+        this.itemDetailsFormGroup.patchValue({ tags: this.selectedItem.tags });
+        input.value = '';
+      }
+    }
+  }
+
+  removeTag(tagToRemove: TagDto): void {
+    if (this.selectedItem) {
+      this.selectedItem.tags = this.selectedItem.tags?.filter(tag => tag.name !== tagToRemove.name) || [];
+      this.itemDetailsFormGroup.patchValue({ tags: this.selectedItem.tags });
+    }
+  }
+
+filterItems(): void {
+  const term = this.searchTerm.trim().toLowerCase();
+  try {
+    if (!term) {
+      this.filteredItems = [...(this.selectedList.items ?? [])];
+      return;
+    }
+
+    this.filteredItems = (this.selectedList.items ?? []).filter(item => {
+      const titleMatch = item.title?.toLowerCase().includes(term) || false;
+      const tagMatch = item.tags?.some(tag => tag.name?.toLowerCase().includes(term)) || false;
+      return titleMatch || tagMatch;
+    });
+  } catch (error) {
+    console.error('Error filtering items:', error);
+    this.filteredItems = [...(this.selectedList.items ?? [])]; // Fallback
+  }
+}
+
 }

@@ -7,15 +7,18 @@
 <div *ngIf="lists">
   <div class="row">
     <div class="col-sm-4">
-      <div class="clearfix">
-        <h2 class="float-start">Lists</h2>
-        <button class="btn btn-default float-end" title="New List..." (click)="showNewListModal(newListModalTemplate)">
-        </button>
-      </div>
-      
+      <li class="list-group-item d-flex mb-2">
+        <div class="col-sm-6 justify-content-start">
+          <h2>Lists</h2>
+        </div>
+        <div class="col-sm-6 d-flex justify-content-end"><button class="btn btn-primary " title="New List..."
+            (click)="showNewListModal(newListModalTemplate)">+</button></div>
+
+      </li>
+
       <ul class="list-group">
         <li *ngFor="let list of lists; index as i" class="list-group-item"
-          [ngClass]="{ 'active': selectedList == list }" (click)="selectedList = list">
+          [ngClass]="{ 'active': selectedList === list }" (click)="selectList(list)">
           <div class="clearfix">
             <div class="float-start">
               {{ list.title }}
@@ -36,15 +39,16 @@
         </button>
       </div>
       <ul id="todo-items" class="list-group mb-2">
-        <!-- <li class="list-group-item" *ngFor="let item of selectedList.items; index as i"
-          > -->
+
         <li class="list-group-item d-flex justify-content-end align-items-center">
-          <input type="text" class="form-control me-2" placeholder="Search..." [(ngModel)]="searchTerm"
+          <input type="text" class="form-control me-2" placeholder="Search by title or tag..." [(ngModel)]="searchTerm"
             (keyup)="filterItems()" style="max-width: 100%;">
+
           <!-- in my mind this will be friendly  -->
-          <!-- <button class="btn btn-primary" (click)="addItem()">+</button> -->
+          <button class="btn btn-primary" (click)="addItem()">+</button>
         </li>
-        <li class="list-group-item" *ngFor="let item of selectedList.items; index as i" [style.background]="item.color ? item.color : 'transparent'">
+        <li class="list-group-item" *ngFor="let item of filteredItems; index as i"
+          [style.background]="item.color ? item.color : 'transparent'">
           <div class="d-flex">
             <div class="todo-item-checkbox">
               <input type="checkbox" [(ngModel)]="item.done" (change)="updateItem(item)" />
@@ -58,6 +62,9 @@
                 <span>{{ item.title }}</span>
               </div>
             </div>
+            <span *ngFor="let tag of item?.tags" class="badge bg-secondary me-1">
+              {{tag.name}}
+            </span>
             <div class="todo-item-commands">
               <!-- User freindly :)  -->
               <!-- <div class="icons" *ngIf="item.id != 0">
@@ -117,8 +124,14 @@
 <ng-template #itemDetailsModalTemplate>
   <div class="modal-header">
     <h4 class="modal-title pull-left">Item Details</h4>
+    <div class="tags-container mx-auto">
+      <span *ngFor="let tag of selectedItem?.tags" class="badge bg-secondary me-1">
+        {{tag.name}} <button type="button" class="btn-close btn-close-white" (click)="removeTag(tag)"></button>
+      </span>
+      <input type="text" class="tag-input" placeholder="Add tag" (keyup.enter)="addTag($event)" #tagInput>
+    </div>
     <button type="button" class="close btn-close pull-right" aria-label="Close" (click)="itemDetailsModalRef.hide()">
-      <span aria-hidden="true" class="visually-hidden">&times;</span>
+      <span aria-hidden="true" class="visually-hidden">×</span>
     </button>
   </div>
   <div class="modal-body">

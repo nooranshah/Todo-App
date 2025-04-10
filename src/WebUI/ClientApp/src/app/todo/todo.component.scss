@@ -84,3 +84,58 @@
 .ml-2 {
   margin-left: 8px;
 }
+
+#todo-items .list-group-item {
+  padding-top: 8px;
+  padding-bottom: 8px;
+
+  .btn-xs {
+    padding: 0;
+  }
+
+  
+  .badge.bg-secondary {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.4rem; 
+    font-size: 0.75rem; 
+    background-color: #6c757d;
+    color: white;
+    border-radius: 0.2rem; 
+    margin-right: 0.25rem; 
+    transition: background-color 0.2s;
+
+    &:hover {
+      background-color: #5a6268;
+    }
+  }
+
+  
+  .d-flex {
+    gap: 0.5rem; 
+    align-items: center;
+    flex-wrap: wrap; 
+  }
+}
+
+
+.tag-input {
+  flex-grow: 1;
+  min-width: 120px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+  outline: none;
+  transition: border-color 0.2s;
+
+  &:focus {
+    border-color: #007bff; 
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  }
+
+  &::placeholder {
+    color: #6c757d;
+    font-style: italic;
+  }
+}

@@ -7,7 +7,6 @@ public class TodoItem : BaseAuditableEntity
     public int ListId { get; set; }
 
     public string? Title { get; set; }
-    [MaxLength(500)]
     public string? Note { get; set; }
 
     public PriorityLevel Priority { get; set; }
@@ -30,6 +29,6 @@ public class TodoItem : BaseAuditableEntity
             _done = value;
         }
     }
-
     public TodoList List { get; set; } = null!;
+    public IList<Tag> Tags { get; private set; } = new List<Tag>();
 }

@@ -111,6 +111,7 @@ export class TodoComponent implements OnInit {
   }
 
   addList(): void {
+    this.filteredItems=[];
     const list = {
       id: 0,
       title: this.newListEditor.title,
@@ -122,6 +123,7 @@ export class TodoComponent implements OnInit {
         list.id = result;
         this.lists.push(list);
         this.selectedList = list;
+        
         this.newListModalRef.hide();
         this.newListEditor = {};
       },

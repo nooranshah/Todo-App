@@ -49,6 +49,13 @@ export class TodoComponent implements OnInit {
   filteredItems: TodoItemDto[] = [];
   //#endregion
 
+  //#region short cut
+  // New property to store tag usage counts
+  tagUsage: { [key: string]: number } = {};
+  // Store top tags for display
+  topTags: string[] = [];
+  //#endregion
+
   constructor(
     private listsClient: TodoListsClient,
     private itemsClient: TodoItemsClient,
@@ -59,6 +66,23 @@ export class TodoComponent implements OnInit {
   ngOnInit(): void {
     this.loadLists();
   }
+  // Update tag usage whenever lists are loaded or modified
+  updateTagUsage(): void {
+    this.tagUsage = {};
+    this.lists.forEach(list => {
+      (list.items ?? []).forEach(item => {
+        (item.tags ?? []).forEach(tag => {
+          this.tagUsage[tag.name] = (this.tagUsage[tag.name] || 0) + 1;
+        });
+      });
+    });
+
+    // Calculate top 3 tags
+    this.topTags = Object.entries(this.tagUsage)
+      .sort((a, b) => b[1] - a[1]) // Sort by count descending
+      .slice(0, 3) // Take top 3
+      .map(entry => entry[0]); // Get tag names
+  }
 
   loadLists(): void {
     this.loading = true;
@@ -67,6 +91,7 @@ export class TodoComponent implements OnInit {
         console.log('Lists response:', result);
         this.lists = result.lists ?? [];
         this.priorityLevels = result.priorityLevels ?? [];
+        this.updateTagUsage();
         if (this.debug) {
           console.log('Loaded lists:', this.lists);
           console.log('Loaded priorityLevels:', this.priorityLevels);
@@ -97,6 +122,21 @@ export class TodoComponent implements OnInit {
         this.selectList(this.lists[0]);
       }
     });
+  }
+
+  // Add tag from shortcut
+  applyTagShortcut(tagName: string): void {
+    if (this.selectedItem) {
+      const tagExists = this.selectedItem.tags?.some(tag => tag.name === tagName);
+      if (!tagExists) {
+        this.selectedItem.tags = this.selectedItem.tags || [];
+        const newTag = new TagDto({ name: tagName });
+        this.selectedItem.tags = [...this.selectedItem.tags, newTag];
+        this.itemDetailsFormGroup.patchValue({ tags: this.selectedItem.tags });
+        this.updateTagUsage(); // Update usage after adding tag
+        this.updateItemDetails(); // Persist the change
+      }
+    }
   }
 
 
@@ -254,6 +294,7 @@ export class TodoComponent implements OnInit {
         this.itemDetailsModalRef.hide();
         this.itemDetailsFormGroup.reset();
         this.loading = false;
+        this.updateTagUsage();
         this.filterItems(); 
       },
       error: err => {
@@ -410,6 +451,7 @@ export class TodoComponent implements OnInit {
         this.selectedItem.tags = [...this.selectedItem.tags, newTag];
         this.itemDetailsFormGroup.patchValue({ tags: this.selectedItem.tags });
         input.value = '';
+        this.updateTagUsage();
       }
     }
   }
@@ -418,6 +460,7 @@ export class TodoComponent implements OnInit {
     if (this.selectedItem) {
       this.selectedItem.tags = this.selectedItem.tags?.filter(tag => tag.name !== tagToRemove.name) || [];
       this.itemDetailsFormGroup.patchValue({ tags: this.selectedItem.tags });
+      this.updateTagUsage();
     }
   }
 
@@ -439,5 +482,7 @@ filterItems(): void {
     this.filteredItems = [...(this.selectedList.items ?? [])]; // Fallback
   }
 }
+
+
 
 }

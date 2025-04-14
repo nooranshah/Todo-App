@@ -121,7 +121,7 @@
   </div>
 </ng-template>
 
-<ng-template #itemDetailsModalTemplate>
+<!-- <ng-template #itemDetailsModalTemplate>
   <div class="modal-header">
     <h4 class="modal-title pull-left">Item Details</h4>
     <div class="tags-container mx-auto">
@@ -177,8 +177,75 @@
       </div>
     </div>
   </div>
-</ng-template>
+</ng-template> -->
 
+<ng-template #itemDetailsModalTemplate>
+  <div class="modal-header">
+    <h4 class="modal-title pull-left">Item Details</h4>
+    <div class="tags-container mx-auto">
+      <span *ngFor="let tag of selectedItem?.tags" class="badge bg-secondary me-1">
+        {{tag.name}} <button type="button" class="btn-close btn-close-white" (click)="removeTag(tag)"></button>
+      </span>
+      <input type="text" class="tag-input" placeholder="Add tag" (keyup.enter)="addTag($event)" #tagInput>
+    </div>
+    <button type="button" class="close btn-close pull-right" aria-label="Close" (click)="itemDetailsModalRef.hide()">
+      <span aria-hidden="true" class="visually-hidden">×</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <!-- Add tag shortcuts -->
+    <div class="tag-shortcuts mb-3">
+      <h6>Frequently Used Tags:</h6>
+      <button *ngFor="let tag of topTags" class="btn btn-outline-secondary btn-sm me-1 mb-1"
+              (click)="applyTagShortcut(tag)">
+        {{tag}}
+      </button>
+      <span *ngIf="!topTags.length" class="text-muted">No tags used yet.</span>
+    </div>
+    <form [formGroup]="itemDetailsFormGroup" class="form">
+      <div class="form-group">
+        <label for="list">List</label>
+        <select class="form-control" formControlName="listId">
+          <option [ngValue]="list.id" *ngFor="let list of lists">{{ list.title }}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="priority">Priority</label>
+        <select class="form-control" formControlName="priority">
+          <option [ngValue]="level.value" *ngFor="let level of priorityLevels">{{ level.name }}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="note">Note</label>
+        <textarea id="note" class="form-control" rows="3" formControlName="note"></textarea>
+      </div>
+      <div class="form-group color-picker-container">
+        <label for="color">Selected Color</label>
+        <div class="color-input-wrapper">
+          <input [(colorPicker)]="selectedItem.color" [value]="selectedItem.color"
+            (colorPickerChange)="onColorChange($event)" class="color-input" />
+          <div class="color-preview" [style.background]="selectedItem.color"></div>
+        </div>
+      </div>
+    </form>
+    <div *ngIf="debug">
+      <pre>{{ itemDetailsFormGroup.value | json }}</pre>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <div class="clearfix">
+      <div class="float-start">
+        <button class="btn btn-default text-danger" (click)="deleteItem(selectedItem, true)">
+          {{deleting ? 'Deleting ' + deleteCountDown + ' ...' : 'Delete'}}
+        </button>
+      </div>
+      <div class="float-end">
+        <button class="btn btn-default" (click)="itemDetailsModalRef.hide()">Cancel</button>
+        <button class="btn btn-primary" (click)="updateItemDetails()">Update</button>
+      </div>
+    </div>
+  </div>
+</ng-template>
 <ng-template #deleteListModalTemplate>
   <div class="modal-header">
     <h4 class="modal-title pull-left">Delete "{{ selectedList?.title }}"?</h4>

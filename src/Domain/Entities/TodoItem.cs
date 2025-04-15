@@ -31,4 +31,6 @@ public class TodoItem : BaseAuditableEntity
     }
     public TodoList List { get; set; } = null!;
     public IList<Tag> Tags { get; private set; } = new List<Tag>();
+
+    public bool IsDeleted { get; set; } = false;
 }
